@@ -32,6 +32,8 @@ function getDeltaTime()
 var SCREEN_WIDTH = canvas.width;
 var SCREEN_HEIGHT = canvas.height;
 
+var heartImage = document.createElement("img");
+heartImage.src = "heartSmall.png";
 
 // some variables to calculate the Frames Per Second (FPS - this tells use
 // how fast our game is running, and allows us to make the game run at a 
@@ -39,6 +41,9 @@ var SCREEN_HEIGHT = canvas.height;
 var fps = 0;
 var fpsCount = 0;
 var fpsTime = 0;
+
+var kills = 0;
+var lives = 3;
 
 var player = new Player();
 var keyboard = new Keyboard();
@@ -256,8 +261,20 @@ function runGame(deltaTime)
 		fpsTime -= 1;
 		fps = fpsCount;
 		fpsCount = 0;
-	}		
-		
+	}	
+
+	for(var i=0; i<lives; i++)
+	{
+		context.drawImage(heartImage, 20 + ((heartImage.width+2)*i), 10)
+	}
+	
+	context.fillStyle = 'white';
+	context.strokeStyle = 'black';
+	context.font = '32px Arial';
+	var scoreText = 'Kills: ' + kills;
+	context.fillText(scoreText, SCREEN_WIDTH - 170, 35)
+	context.strokeText(scoreText, SCREEN_WIDTH - 170, 35)
+	
 	// draw the FPS
 	context.fillStyle = "#f00";
 	context.font="14px Arial";
