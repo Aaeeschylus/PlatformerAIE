@@ -58,62 +58,7 @@ Player.prototype.update = function(deltaTime)
 	var right = false;
 	var jump = false;
 	var shooting = false;
-	var climbing = false;
-	
-	// check keypress events
-	if(keyboard.isKeyDown(keyboard.KEY_LEFT) == true) {
-		left = true;
-		this.direction = LEFT;
-		if(this.jumping == false)
-			if(this.shooting == true)
-			{
-				if(this.sprite.currentAnimation != ANIM_SHOOT_LEFT)
-				{
-					this.sprite.setAnimation(ANIM_SHOOT_LEFT);
-				}
-			}
-			else if (this.sprite.currentAnimation != ANIM_WALK_LEFT) {
-				this.sprite.setAnimation(ANIM_WALK_LEFT);
-			}
-		
-		else if(this.sprite.currentAnimation != ANIM_WALK_LEFT && this.jumping == true)
-			this.sprite.setAnimation(ANIM_JUMP_LEFT);
-		
-	}
-	else if(keyboard.isKeyDown(keyboard.KEY_RIGHT) == true) {
-		right = true;
-		this.direction = RIGHT;
-		if(this.jumping == false)
-			if(this.shooting == true)
-			{
-				if(this.sprite.currentAnimation != ANIM_SHOOT_RIGHT)
-				{
-					this.sprite.setAnimation(ANIM_SHOOT_RIGHT)
-				}
-			}
-			else if (this.sprite.currentAnimation != ANIM_WALK_RIGHT) {
-				this.sprite.setAnimation(ANIM_WALK_RIGHT)
-			}
-			
-		else if(this.sprite.currentAnimation != ANIM_WALK_RIGHT && this.jumping == true)
-			this.sprite.setAnimation(ANIM_JUMP_RIGHT);
-	}
-	else {
-		if(this.jumping == false && this.falling == false)
-		{
-			if(this.direction== LEFT)
-			{
-				if(this.sprite.currentAnimation != ANIM_IDLE_LEFT)
-					this.sprite.setAnimation(ANIM_IDLE_LEFT);
-			}
-			else
-			{
-				if(this.sprite.currentAnimation != ANIM_IDLE_RIGHT)
-					this.sprite.setAnimation(ANIM_IDLE_RIGHT);
-			}
-		}
-	}
-	
+	var climbing = false;	
 		
 	var cx = player.position.x + TILE/2;
 	var cy = player.position.y + TILE;
@@ -121,12 +66,54 @@ Player.prototype.update = function(deltaTime)
 	var tcx = pixelToTile(cx);
 	var tcy = pixelToTile(cy);
 	
-	//check if it is on a ladder
+	//check keypress if on ladder
 	var isLadder = cellAtTileCoord(LAYER_LADDERS, tcx, tcy);
 	if (isLadder == true) 
 	{
-		this.climbing = true;
+		if(keyboard.isKeyDown(keyboard.KEY_LEFT) == true) {
+			left = true;
+			this.direction = LEFT
+			if(this.climbing == false)
+			{
+				if(this.jumping == false)
+				{
+					if(this.shooting == true)
+					{
+						if(this.sprite.currentAnimation != ANIM_SHOOT_LEFT)
+						{
+							this.sprite.setAnimation(ANIM_SHOOT_LEFT);
+						}
+					}
+					else if (this.sprite.currentAnimation != ANIM_WALK_LEFT) {
+						this.sprite.setAnimation(ANIM_WALK_LEFT);
+					}
+				}
+			}
+		}
+	
+		else if(keyboard.isKeyDown(keyboard.KEY_RIGHT) == true) {
+			right = true;
+			this.direction = RIGHT;
+			if(this.climbing == false)
+			{
+				if(this.jumping == false)
+				{
+					if(this.shooting == true)
+					{
+						if(this.sprite.currentAnimation != ANIM_SHOOT_RIGHT)
+						{
+							this.sprite.setAnimation(ANIM_SHOOT_RIGHT)
+						}
+					}
+					else if (this.sprite.currentAnimation != ANIM_WALK_RIGHT) {
+						this.sprite.setAnimation(ANIM_WALK_RIGHT)
+					}
+				}
+			}
+		}
+		
 		if(keyboard.isKeyDown(keyboard.KEY_UP) == true) {
+			this.climbing = true;
 			this.velocity.y = -550;
 			GRAVITY = 0;
 		}
@@ -134,36 +121,104 @@ Player.prototype.update = function(deltaTime)
 			GRAVITY = METER * 9.8 * 6;
 			this.velocity.y = 0;			
 		}
+		
 		if(keyboard.isKeyDown(keyboard.KEY_DOWN) == true) {
+			this.climbing = true;
 			this.velocity.y = 550;
 			GRAVITY = 0;
 		}
 		else if(keyboard.isKeyDown(keyboard.KEY_DOWN) == false){
 			GRAVITY = METER * 9.8 * 6;			
 		}
+		
+		if(keyboard.isKeyDown(keyboard.KEY_DOWN) == true && this.climbing == true && this.sprite.currentAnimation != ANIM_CLIMB_UP){
+			this.sprite.setAnimation(ANIM_CLIMB_UP);
+		}
+		
+		if(keyboard.isKeyDown(keyboard.KEY_UP) == true && this.jumping && this.climbing == true)
+		{
+			this.jumping = false;
+			this.climbing = true;
+			this.sprite.setAnimation(ANIM_CLIMB_UP);
+		}
 	}
+	//check keypress when not on ladder
 	else if (isLadder == false)
 	{
 		this.climbing = false;
 		GRAVITY = METER * 9.8 * 6;
-	}
-	
-	if(keyboard.isKeyDown(keyboard.KEY_UP) == true) {
-	
-		if(this.climbing == false)
-		{
-			jump = true;
-			if(left == true) 
-			{
+		
+		if(keyboard.isKeyDown(keyboard.KEY_LEFT) == true) {
+			left = true;
+			this.direction = LEFT;
+			if(this.jumping == false)
+				if(this.shooting == true)
+				{
+					if(this.sprite.currentAnimation != ANIM_SHOOT_LEFT)
+					{
+						this.sprite.setAnimation(ANIM_SHOOT_LEFT);
+					}
+				}
+				else if (this.sprite.currentAnimation != ANIM_WALK_LEFT) {
+					this.sprite.setAnimation(ANIM_WALK_LEFT);
+				}
+			
+			else if(this.sprite.currentAnimation != ANIM_WALK_LEFT && this.jumping == true)
 				this.sprite.setAnimation(ANIM_JUMP_LEFT);
-			}
-			if(right == true) 
-			{
+			
+		}
+		else if(keyboard.isKeyDown(keyboard.KEY_RIGHT) == true) {
+			right = true;
+			this.direction = RIGHT;
+			if(this.jumping == false)
+				if(this.shooting == true)
+				{
+					if(this.sprite.currentAnimation != ANIM_SHOOT_RIGHT)
+					{
+						this.sprite.setAnimation(ANIM_SHOOT_RIGHT)
+					}
+				}
+				else if (this.sprite.currentAnimation != ANIM_WALK_RIGHT) {
+					this.sprite.setAnimation(ANIM_WALK_RIGHT)
+				}
+				
+			else if(this.sprite.currentAnimation != ANIM_WALK_RIGHT && this.jumping == true)
 				this.sprite.setAnimation(ANIM_JUMP_RIGHT);
-			} 
+		}
+		else {
+			if(this.jumping == false && this.falling == false)
+			{
+				if(this.direction== LEFT)
+				{
+					if(this.sprite.currentAnimation != ANIM_IDLE_LEFT)
+						this.sprite.setAnimation(ANIM_IDLE_LEFT);
+				}
+				else
+				{
+					if(this.sprite.currentAnimation != ANIM_IDLE_RIGHT)
+						this.sprite.setAnimation(ANIM_IDLE_RIGHT);
+				}
+			}
+		}
+		
+		if(keyboard.isKeyDown(keyboard.KEY_UP) == true) {
+		
+			if(this.climbing == false)
+			{
+				jump = true;
+				if(left == true) 
+				{
+					this.sprite.setAnimation(ANIM_JUMP_LEFT);
+				}
+				if(right == true) 
+				{
+					this.sprite.setAnimation(ANIM_JUMP_RIGHT);
+				} 
+			}
 		}
 	}
 	
+	//shooting
 	if(this.cooldownTimer > 0)
 	{
 		this.cooldownTimer -= deltaTime;
@@ -182,7 +237,7 @@ Player.prototype.update = function(deltaTime)
 	}
 	
 	
-	
+	//movements
 	var wasleft = this.velocity.x < 0;
 	var wasright = this.velocity.x > 0;
 	var falling = this.falling;
