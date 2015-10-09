@@ -1,5 +1,6 @@
 var Player = function() {
 	this.sprite = new Sprite("ChuckNorris.png");
+	//which image in the ChuckNorris.png image set should be used for each animation
 	this.sprite.buildAnimation(12, 8, 165, 126, 0.05,
 	[0, 1, 2, 3, 4, 5, 6, 7]);
 	this.sprite.buildAnimation(12, 8, 165, 126, 0.05,
@@ -35,6 +36,7 @@ var Player = function() {
 	this.cooldownTimer = 0;
 };
 
+//Giving all the animations a number, relating to the values above
 var LEFT = 0;
 var RIGHT = 1;
 var ANIM_IDLE_LEFT = 0;
@@ -81,8 +83,18 @@ Player.prototype.update = function(deltaTime)
 	else if(keyboard.isKeyDown(keyboard.KEY_RIGHT) == true) {
 		right = true;
 		this.direction = RIGHT;
-		if(this.sprite.currentAnimation != ANIM_WALK_RIGHT && this.jumping == false)
-			this.sprite.setAnimation(ANIM_WALK_RIGHT);
+		if(this.jumping == false)
+			if(this.shooting == true)
+			{
+				if(this.sprite.currentAnimation != ANIM_SHOOT_RIGHT)
+				{
+					this.sprite.setAnimation(ANIM_SHOOT_RIGHT)
+				}
+			}
+			else if (this.sprite.currentAnimation != ANIM_WALK_RIGHT) {
+				this.sprite.setAnimation(ANIM_WALK_RIGHT)
+			}
+			
 		else if(this.sprite.currentAnimation != ANIM_WALK_RIGHT && this.jumping == true)
 			this.sprite.setAnimation(ANIM_JUMP_RIGHT);
 	}
@@ -102,16 +114,54 @@ Player.prototype.update = function(deltaTime)
 		}
 	}
 	
-	if(keyboard.isKeyDown(keyboard.KEY_UP) == true) {
-		jump = true;
-		if(left == true) 
-		{
-			this.sprite.setAnimation(ANIM_JUMP_LEFT);
+		
+	var cx = player.position.x + TILE/2;
+	var cy = player.position.y + TILE;
+	
+	var tcx = pixelToTile(cx);
+	var tcy = pixelToTile(cy);
+	
+	//check if it is on a ladder
+	var isLadder = cellAtTileCoord(LAYER_LADDERS, tcx, tcy);
+	if (isLadder == true) 
+	{
+		this.climbing = true;
+		if(keyboard.isKeyDown(keyboard.KEY_UP) == true) {
+			this.velocity.y = -550;
+			GRAVITY = 0;
 		}
-		if(right == true) 
+		else if(keyboard.isKeyDown(keyboard.KEY_UP) == false){
+			GRAVITY = METER * 9.8 * 6;
+			this.velocity.y = 0;			
+		}
+		if(keyboard.isKeyDown(keyboard.KEY_DOWN) == true) {
+			this.velocity.y = 550;
+			GRAVITY = 0;
+		}
+		else if(keyboard.isKeyDown(keyboard.KEY_DOWN) == false){
+			GRAVITY = METER * 9.8 * 6;			
+		}
+	}
+	else if (isLadder == false)
+	{
+		this.climbing = false;
+		GRAVITY = METER * 9.8 * 6;
+	}
+	
+	if(keyboard.isKeyDown(keyboard.KEY_UP) == true) {
+	
+		if(this.climbing == false)
 		{
-			this.sprite.setAnimation(ANIM_JUMP_RIGHT);
-		} 
+			jump = true;
+			if(left == true) 
+			{
+				this.sprite.setAnimation(ANIM_JUMP_LEFT);
+			}
+			if(right == true) 
+			{
+				this.sprite.setAnimation(ANIM_JUMP_RIGHT);
+			} 
+		}
 	}
 	
 	if(this.cooldownTimer > 0)
@@ -139,6 +189,7 @@ Player.prototype.update = function(deltaTime)
 	var ddx = 0; // acceleration
 	var ddy = GRAVITY;
 
+	//how the character moves
 	if (left)
 		ddx = ddx - ACCEL; // player wants to go left
 	else if (wasleft)
@@ -149,7 +200,7 @@ Player.prototype.update = function(deltaTime)
 	else if (wasright)
 		ddx = ddx - FRICTION; // player was going right, but not any more
 	
-	if (jump && !this.jumping && !falling)
+	if (jump && !this.jumping && !falling && !climbing)
 	{
 		ddy = ddy - JUMP; // apply an instantaneous (large) vertical impulse
 		this.jumping = true;
@@ -229,58 +280,10 @@ Player.prototype.update = function(deltaTime)
 			this.velocity.x = 0; // stop horizontal velocity
 		}
 	}
-	
-	var cx = player.position.x + TILE/2;
-	var cy = player.position.y + TILE;
-	
-	var tcx = pixelToTile(cx);
-	var tcy = pixelToTile(cy);
-	
-	if(this.climbing = true)
-	{
-		this.sprite.setAnimation(ANIM_CLIMB_UP)
-	}
-	
-	var isLadder = cellAtTileCoord(LAYER_LADDERS, tcx, tcy);
-	if (isLadder) 
-	{
-		if(keyboard.isKeyDown(keyboard.KEY_UP) == true) {
-			this.climbing = true;
-			this.velocity.y = -550;
-			GRAVITY = 0;
-		}
-		else if(keyboard.isKeyDown(keyboard.KEY_UP) == false){
-			this.climbing = false;
-			GRAVITY = METER * 9.8 * 6;
-			this.velocity.y = 0;			
-		}
-		
-		if(keyboard.isKeyDown(keyboard.KEY_DOWN) == true) {
-			this.climbing = true;
-			this.velocity.y = 550;
-			GRAVITY = 0;
-		}
-		else if(keyboard.isKeyDown(keyboard.KEY_DOWN) == false){
-			this.climbing = false;
-			GRAVITY = METER * 9.8 * 6;			
-		}
-	}
-	else if (isLadder == false)
-	{
-		this.climbing = false;
-		GRAVITY = METER * 9.8 * 6;
-	}
-	
 }
 
 
 Player.prototype.draw = function()
 {
 	this.sprite.draw(context, this.position.x - worldOffsetX, this.position.y - worldOffsetY);
-	// context.save();
-		// context.translate(this.position.x, this.position.y);
-		// context.rotate(this.rotation);
-		// context.drawImage(this.image, -this.width/2 + 16, -this.height/2 - 16);
-		// context.drawImage(this.image, -this.width/2, -this.height/2);
-	// context.restore();
 }

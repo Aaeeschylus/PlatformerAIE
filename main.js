@@ -118,6 +118,7 @@ function bound(value, min, max)
 	return value;
 }
 
+//side scrolling (vertically and horizontally)
 var worldOffsetX = 0;
 var worldOffsetY = 0;
 function drawMap()
@@ -197,9 +198,9 @@ function initialize()
 			 {
 				 if(level1.layers[layerIdx].data[idx] != 0)
 				 {
-					 // for each tile we find in the layer data, we need to create 4 collisions
-					 // (because our collision squares are 35x35 but the tile in the
-					// level are 70x70)
+					 // for each tile we find in the layer data, we need to create a collision.
+					 // no longer 4 collisions as I have used a different tile set, where each
+					 // tile is no longer the equivalent of a 2x2 tile area, instead, is a 1x1.
 					cells[layerIdx][y][x] = 1;
 				}
 				else if(cells[layerIdx][y][x] != 1) 
@@ -212,6 +213,7 @@ function initialize()
 		}
 	}
 	
+	//setting music
 	musicBackground = new Howl(
 	{
 		urls: ["background.ogg"],
