@@ -32,9 +32,53 @@ function getDeltaTime()
 var SCREEN_WIDTH = canvas.width;
 var SCREEN_HEIGHT = canvas.height;
 
+var startScreenBackground = [];
+var finishScreenBackground = [];
+var endScreenBackground = [];
+var gameScreenBackground = [];
+
+var startScreen = document.createElement("img");
+startScreen.src = "startscreen.png";
+
+var finishScreen = document.createElement("img");
+finishScreen.src = "finishscreen.png";
+
+var gameOverScreen = document.createElement("img");
+gameOverScreen.src = "endgame.png";
+
+var gameBackground = document.createElement("img");
+gameBackground.src = "gamebackground.png";
+
 var heartImage = document.createElement("img");
 heartImage.src = "heartSmall.png";
 
+for(var y=0;y<1;y++)
+{
+	startScreenBackground[y] = [];
+	for(var x=0; x<1; x++)
+		startScreenBackground[y][x] = startScreen;
+}
+
+for(var y=0;y<1;y++)
+{
+	gameScreenBackground[y] = [];
+	for(var x=0; x<1; x++)
+		gameScreenBackground[y][x] = gameBackground;
+}
+
+for(var y=0;y<1;y++)
+{
+	finishScreenBackground[y] = [];
+	for(var x=0; x<1; x++)
+		finishScreenBackground[y][x] = finishScreen;
+}
+
+for(var y=0;y<1;y++)
+{
+	endScreenBackground[y] = [];
+	for(var x=0; x<1; x++)
+		endScreenBackground[y][x] = gameOverScreen;
+}
 // some variables to calculate the Frames Per Second (FPS - this tells use
 // how fast our game is running, and allows us to make the game run at a 
 // constant speed)
@@ -44,15 +88,23 @@ var fpsTime = 0;
 
 var kills = 0;
 var lives = 3;
+var deaths = 0;
 
 var player = new Player();
 var keyboard = new Keyboard();
+
+var enemies = [];
+var bullets = [];
 
 var LAYER_COUNT = 4;
 var LAYER_BACKGROUND = 0;
 var LAYER_AESTHETICS = 1;
 var LAYER_PLATFORMS = 2;
 var LAYER_LADDERS = 3;
+
+var LAYER_OBJECT_ENEMIES = 4;
+var LAYER_OBJECT_TRIGGERS = 5;
+
 var MAP = {tw: 200, th: 80};
 var TILE = 32;
 var TILESET_TILE = TILE;
@@ -75,6 +127,9 @@ var ACCEL = MAXDX * 2;
 var FRICTION = MAXDX * 6;
  // (a large) instantaneous jump impulse
 var JUMP = METER * 1800;
+
+var ENEMY_MAXDX = METER * 5;
+var ENEMY_ACCEL = ENEMY_MAXDX * 2;
 
 var tileset = document.createElement("img");
 tileset.src = "customTileSet.png";
@@ -181,6 +236,18 @@ function drawMap()
 	}
 }
 
+function intersects(x1, y1, w1, h1, x2, y2, w2, h2)
+{
+	if(y2 + h2 < y1 ||
+		x2 + w2 < x1 ||
+		x2 > x1 + w1 ||
+		y2> y1 + h1)
+	{
+		return false;
+	}
+	return true;
+}
+
 var musicBackgroud;
 var sfxFire;
 var cells = []; // the array that holds our simplified collision data
@@ -213,6 +280,48 @@ function initialize()
 		}
 	}
 	
+	// initialize trigger layer in collision map
+	cells[LAYER_OBJECT_TRIGGERS] = [];
+	idx = 0;
+	for(var y = 0; y < level1.layers[LAYER_OBJECT_TRIGGERS].height; y++) 
+	{
+		cells[LAYER_OBJECT_TRIGGERS][y] = [];
+		for(var x = 0; x < level1.layers[LAYER_OBJECT_TRIGGERS].width; x++) 
+		{
+			if(level1.layers[LAYER_OBJECT_TRIGGERS].data[idx] != 0) 
+			{
+				cells[LAYER_OBJECT_TRIGGERS][y][x] = 1;
+				cells[LAYER_OBJECT_TRIGGERS][y-1][x] = 1;
+				cells[LAYER_OBJECT_TRIGGERS][y-1][x+1] = 1;
+				cells[LAYER_OBJECT_TRIGGERS][y][x+1] = 1;
+			}
+			else if(cells[LAYER_OBJECT_TRIGGERS][y][x] != 1) 
+			{
+				// if we haven't set this cell's value, then set it to 0 now
+				cells[LAYER_OBJECT_TRIGGERS][y][x] = 0;
+			}
+		idx++;
+		}
+	}
+
+	
+	//adding enemies
+	idx = 0;
+	for(var y = 0; y < level1.layers[LAYER_OBJECT_ENEMIES].height; y++) 
+	{
+		for(var x = 0; x < level1.layers[LAYER_OBJECT_ENEMIES].width; x++) 
+		{
+			if(level1.layers[LAYER_OBJECT_ENEMIES].data[idx] != 0) 
+			{
+				var px = tileToPixel(x);
+				var py = tileToPixel(y);
+				var e = new Enemy(px, py);
+				enemies.push(e);
+			}
+			idx++;
+		}
+	}
+	
 	//setting music
 	musicBackground = new Howl(
 	{
@@ -235,25 +344,50 @@ function initialize()
 	});
 }
 
-var splashTimer = 0.5;
+var deathTimer = 0.00001
 function runSplash(deltaTime)
 {
-	splashTimer -= deltaTime;
-	if(splashTimer <= 0)
+	if(keyboard.isKeyDown(keyboard.KEY_SPACE) == true)
 	{
 		gameState = STATE_GAME;
 		return;
 	}
-	context.fillStyle = "#000";
-	context.font="24px Arial";
-	context.fillText("SPLASH SCREEN", 200, 240);
+	
+	for(var y=0; y<1; y++)
+		{
+			for(var x=0; x<1; x++)
+			{
+				context.drawImage(startScreenBackground[y][x], x*1, y*1);
+			}
+		}
+	
+	deaths = 0;
+	
+	context.fillStyle = 'white';
+	context.strokeStyle = 'black';
+	
+	context.font="36px Verdana";
+	context.fillText("Chuck Norris: The Platformer", 60, 240);
+	context.strokeText("Chuck Norris: The Platformer", 60, 240);
+	
+	context.fillText("Press 'Space' key to begin!", 80, 280);
+	context.strokeText("Press 'Space' key to begin!", 80, 280);
 
 }
 function runGame(deltaTime)
 {
+	for(var y=0; y<1; y++)
+		{
+			for(var x=0; x<1; x++)
+			{
+				context.drawImage(gameScreenBackground[y][x], x*1, y*1);
+			}
+		}
 	player.update(deltaTime);
 	drawMap();
 	player.draw();
+	
+		
 		
 	// update the frame counter 
 	fpsTime += deltaTime;
@@ -265,9 +399,62 @@ function runGame(deltaTime)
 		fpsCount = 0;
 	}	
 
+	var hit=false;
+	for(var i=0; i<bullets.length; i++)
+	{
+		bullets[i].update(deltaTime);
+		if( bullets[i].position.x - worldOffsetX < 0 ||	bullets[i].position.x - worldOffsetX > SCREEN_WIDTH)
+		{
+			hit = true;
+		}
+		for(var j=0; j<enemies.length; j++)
+		{
+			if(intersects( bullets[i].position.x, bullets[i].position.y, TILE, TILE,
+			 enemies[j].position.x, enemies[j].position.y, TILE, TILE) == true)
+			{
+				// kill both the bullet and the enemy
+				enemies.splice(j, 1);
+				hit = true;
+				// increment the player score
+				kills += 1;
+				break;
+			}
+		}
+		if(hit == true)
+		{
+			bullets.splice(i, 1);
+			break;
+		}
+	}
+	
+	
+	for(var i=0; i<enemies.length; i++)
+	{
+		var hitPlayer = intersects(enemies[i].position.x, enemies[i].position.y, TILE, TILE, player.position.x, player.position.y, TILE, TILE)
+		if(hitPlayer == true)
+		{
+			player.position.set( 7.5*32, 73*32 );
+			lives = lives - 1;
+			gameState = STATE_DEATH;
+		}
+	}
+	
+	
+	for(var i=0; i<bullets.length; i++)
+	{
+		bullets[i].update(deltaTime);
+		bullets[i].draw();
+	}
+	
 	for(var i=0; i<lives; i++)
 	{
 		context.drawImage(heartImage, 20 + ((heartImage.width+2)*i), 10)
+	}
+	
+	for(var i=0; i<enemies.length; i++)
+	{
+		enemies[i].update(deltaTime);
+		enemies[i].draw();
 	}
 	
 	context.fillStyle = 'white';
@@ -282,14 +469,75 @@ function runGame(deltaTime)
 	context.font="14px Arial";
 	context.fillText("FPS: " + fps, 5, 20, 100);
 }
+
+function runDeathSlide(deltaTime)
+{
+	deathTimer -= deltaTime;
+	if(deathTimer <= 0)
+	{
+		if(lives == 0)
+		{
+			gameState = STATE_GAMEOVER;
+		}
+		else
+		{
+		gameState = STATE_GAME;
+		return;
+		}
+	}
+}
+
 function runGameOver(deltaTime)
 {
+	for(var y=0; y<1; y++)
+		{
+			for(var x=0; x<1; x++)
+			{
+				context.drawImage(endScreenBackground[y][x], x*1, y*1);
+			}
+		}
+		
+	//Writing the text on the screen
+	context.fillStyle = 'white';
+	context.strokeStyle = 'black';
+	
+	context.font="32px Verdana";
+	context.fillText("You got " + kills + " kills!", 200, 300);
+	context.strokeText("You got " + kills + " kills!", 200, 300);
+	
+	context.font="26px Verdana";
+	context.fillText("Press F5 to restart!", 200, 330);
+	context.strokeText("Press F5 to restart!", 200, 330);
+}
 
+function runVictory(deltaTime)
+{
+	for(var y=0; y<1; y++)
+		{
+			for(var x=0; x<1; x++)
+			{
+				context.drawImage(finishScreenBackground[y][x], x*1, y*1);
+			}
+		}
+		
+	context.fillStyle = 'white';
+	context.strokeStyle = 'black';
+	
+	context.font="32px Verdana";
+	context.fillText("CONGRATULATIONS!!! YOU WON!!!", 30, 270);
+	context.strokeText("CONGRATULATIONS!!! YOU WON!!!", 30, 270);
+	
+	context.font="26px Verdana";
+	context.fillText("You got " + kills + " kills!", 220, 300);
+	context.strokeText("You got " + kills + " kills!", 220, 300);
+	
+	context.fillText("Press F5 to restart!", 200, 330);
+	context.strokeText("Press F5 to restart!", 200, 330);
 }
 
 function run()
 {
-	context.fillStyle = "#ccc";		
+	context.fillStyle = "#0080FF";		
 	context.fillRect(0, 0, canvas.width, canvas.height);
 	
 	var deltaTime = getDeltaTime();
@@ -302,8 +550,14 @@ function run()
 		case STATE_GAME:
 			runGame(deltaTime);
 			break;
+		case STATE_DEATH:
+			runDeathSlide(deltaTime);
+			break;
 		case STATE_GAMEOVER:
 			runGameOver(deltaTime);
+			break;
+		case STATE_VICTORY:
+			runVictory(deltaTime);
 			break;
 	}
 

@@ -1,6 +1,8 @@
 var STATE_SPLASH = 0;
 var STATE_GAME = 1;
-var STATE_GAMEOVER = 2;
+var STATE_DEATH = 2;
+var STATE_GAMEOVER = 3;
+var STATE_VICTORY = 4;
 
 var gameState = STATE_SPLASH;
 

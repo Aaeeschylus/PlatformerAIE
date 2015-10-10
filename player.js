@@ -19,6 +19,11 @@ var Player = function() {
 	[65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78]);
 	this.sprite.buildAnimation(12, 8, 165, 126, 0.05,
 	[79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92]);
+	this.sprite.buildAnimation(12, 8, 165, 126, 0.05,
+	[30, 35, 36, 40])
+	this.sprite.buildAnimation(12, 8, 165, 126, 0.05,
+	[82, 87, 88, 92])
+	
 	
 	for(var i=0; i<ANIM_MAX; i++)
 	{
@@ -26,7 +31,7 @@ var Player = function() {
 	}
 	
 	this.position = new Vector2();
-	this.position.set( 3.5*32, 36*32 );
+	this.position.set( 7.5*32, 73*32 );
 	this.width = 165;
 	this.height = 125;
 	this.velocity = new Vector2();
@@ -48,7 +53,9 @@ var ANIM_IDLE_RIGHT = 5;
 var ANIM_JUMP_RIGHT = 6;
 var ANIM_WALK_RIGHT = 7;
 var ANIM_SHOOT_RIGHT = 8;
-var ANIM_MAX = 9;
+var ANIM_SHOOT_IDLE_LEFT = 9;
+var ANIM_SHOOT_IDLE_RIGHT = 10;
+var ANIM_MAX = 11;
 
 Player.prototype.update = function(deltaTime)
 {
@@ -167,7 +174,7 @@ Player.prototype.update = function(deltaTime)
 				this.sprite.setAnimation(ANIM_JUMP_LEFT);
 			
 		}
-		else if(keyboard.isKeyDown(keyboard.KEY_RIGHT) == true) {
+		else if(keyboard.isKeyDown(keyboard.KEY_RIGHT) == true && shooting == false) {
 			right = true;
 			this.direction = RIGHT;
 			if(this.jumping == false)
@@ -186,14 +193,14 @@ Player.prototype.update = function(deltaTime)
 				this.sprite.setAnimation(ANIM_JUMP_RIGHT);
 		}
 		else {
-			if(this.jumping == false && this.falling == false)
+			if(this.jumping == false && this.falling == false && this.shooting == false)
 			{
-				if(this.direction== LEFT)
+				if(this.direction == LEFT)
 				{
 					if(this.sprite.currentAnimation != ANIM_IDLE_LEFT)
 						this.sprite.setAnimation(ANIM_IDLE_LEFT);
 				}
-				else
+				else 
 				{
 					if(this.sprite.currentAnimation != ANIM_IDLE_RIGHT)
 						this.sprite.setAnimation(ANIM_IDLE_RIGHT);
@@ -206,14 +213,36 @@ Player.prototype.update = function(deltaTime)
 			if(this.climbing == false)
 			{
 				jump = true;
-				if(left == true) 
+				if(this.shooting == true)
 				{
-					this.sprite.setAnimation(ANIM_JUMP_LEFT);
+					if(left == true && this.sprite.currentAnimation != ANIM_SHOOT_IDLE_LEFT) 
+					{
+						this.sprite.setAnimation(ANIM_SHOOT_IDLE_LEFT);
+					}
+					else if(left == false && this.direction == LEFT && this.sprite.currentAnimation != ANIM_SHOOT_IDLE_LEFT)
+					{
+						this.sprite.setAnimation(ANIM_SHOOT_IDLE_LEFT);
+					}
+					if(right == true && this.sprite.currentAnimation != ANIM_SHOOT_IDLE_RIGHT)
+					{
+						this.sprite.setAnimation(ANIM_SHOOT_IDLE_RIGHT);
+					}
+					else if(right == false && this.direction == RIGHT && this.sprite.currentAnimation != ANIM_SHOOT_IDLE_RIGHT)
+					{
+						this.sprite.setAnimation(ANIM_SHOOT_IDLE_RIGHT);
+					}
 				}
-				if(right == true) 
+				else if(this.shooting == false)
 				{
-					this.sprite.setAnimation(ANIM_JUMP_RIGHT);
-				} 
+					if(right == true) 
+					{
+						this.sprite.setAnimation(ANIM_JUMP_RIGHT);
+					}
+					if(left == true)
+					{
+						this.sprite.setAnimation(ANIM_JUMP_LEFT);
+					}
+				}				
 			}
 		}
 	}
@@ -225,6 +254,14 @@ Player.prototype.update = function(deltaTime)
 	}
 	if(keyboard.isKeyDown(keyboard.KEY_SPACE) == true){
 		this.shooting = true;
+		if(keyboard.isKeyDown(keyboard.KEY_LEFT) == false && this.direction == LEFT && this.sprite.currentAnimation != ANIM_SHOOT_IDLE_LEFT) 
+		{
+			this.sprite.setAnimation(ANIM_SHOOT_IDLE_LEFT);
+		}
+		if(keyboard.isKeyDown(keyboard.KEY_RIGHT) == false && this.direction == RIGHT && this.sprite.currentAnimation != ANIM_SHOOT_IDLE_RIGHT) 
+		{
+			this.sprite.setAnimation(ANIM_SHOOT_IDLE_RIGHT);
+		}
 	}
 	else {
 		this.shooting = false;
@@ -233,7 +270,17 @@ Player.prototype.update = function(deltaTime)
 	if(this.shooting && this.cooldownTimer <= 0)
 	{
 		sfxFire.play();
-		this.cooldownTimer  =0.3
+		if(player.direction == LEFT)
+		{
+			var bullet = new Bullet(player.position.x - 20, player.position.y - 13, false)
+			bullets.push(bullet);
+		}
+		else
+		{
+			var bullet = new Bullet(player.position.x + 40, player.position.y - 13, true)
+			bullets.push(bullet);
+		}
+		this.cooldownTimer = 0.3
 	}
 	
 	
@@ -334,6 +381,11 @@ Player.prototype.update = function(deltaTime)
 			this.position.x = tileToPixel(tx + 1);
 			this.velocity.x = 0; // stop horizontal velocity
 		}
+	}
+	
+	if(cellAtTileCoord(LAYER_OBJECT_TRIGGERS, tx, ty) == true)
+	{
+		gameState = STATE_VICTORY;
 	}
 }
 
